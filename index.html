@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document Validation and Data Extraction System</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4361ee;
+            --primary-dark: #3a56d4;
+            --secondary: #7209b7;
+            --success: #06d6a0;
+            --warning: #ffd166;
+            --danger: #ef476f;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --gray: #6c757d;
+            --extracted-data: #0A6B62; /* New color for extracted data */
+            --card-shadow: 0 10px 20px rgba(0,0,0,0.05), 0 6px 6px rgba(0,0,0,0.07);
+            --transition: all 0.3s ease-in-out;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e5e6 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px;
+            color: var(--dark);
+        }
+        
+        .container {
+            max-width: 900px;
+            width: 100%;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, var(--primary) 0%, var(--secondary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .header p {
+            color: var(--gray);
+            font-size: 1.1rem;
+        }
+        
+        .card {
+            background-color: white;
+            border-radius: 16px;
+            box-shadow: var(--card-shadow);
+            overflow: hidden;
+            transition: var(--transition);
+            margin-bottom: 30px;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.1), 0 8px 8px rgba(0,0,0,0.08);
+        }
+        
+        .card-header {
+            background: linear-gradient(90deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            padding: 20px 25px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+        }
+        
+        .card-header i {
+            margin-right: 10px;
+            font-size: 1.4rem;
+        }
+        
+        .card-body {
+            padding: 30px 25px;
+        }
+        
+        .form-group {
+            margin-bottom: 25px;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--dark);
+            font-size: 0.95rem;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: var(--transition);
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.15);
+        }
+        
+        select.form-control {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%236c757d' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 15px center;
+            background-size: 12px;
+            padding-right: 40px;
+        }
+        
+        .file-upload {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 30px;
+            border: 2px dashed #e9ecef;
+            border-radius: 8px;
+            transition: var(--transition);
+            text-align: center;
+            cursor: pointer;
+        }
+        
+        .file-upload:hover {
+            border-color: var(--primary);
+        }
+        
+        .file-upload i {
+            font-size: 2.5rem;
+            color: var(--primary);
+            margin-bottom: 15px;
+        }
+        
+        .file-upload-text {
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        
+        .file-upload-subtext {
+            color: var(--gray);
+            font-size: 0.85rem;
+        }
+        
+        .file-upload input[type="file"] {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+        
+        .file-name {
+            margin-top: 15px;
+            padding: 8px 12px;
+            background-color: #f8f9fa;
+            border-radius: 6px;
+            display: none;
+            align-items: center;
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .file-name i {
+            font-size: 1rem;
+            margin-right: 8px;
+            margin-bottom: 0;
+        }
+        
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 12px 24px;
+            font-size: 1rem;
+            font-weight: 500;
+            text-align: center;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(90deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: linear-gradient(90deg, var(--primary-dark) 0%, var(--secondary) 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(67, 97, 238, 0.3);
+        }
+        
+        .btn i {
+            margin-right: 8px;
+        }
+        
+        .btn-block {
+            width: 100%;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .spinner {
+            display: inline-block;
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(67, 97, 238, 0.1);
+            border-radius: 50%;
+            border-top-color: var(--primary);
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .loading-text {
+            margin-top: 15px;
+            font-weight: 500;
+            color: var(--gray);
+        }
+        
+        .response-container {
+            display: none;
+            transition: var(--transition);
+        }
+        
+        .response-card {
+            background-color: white;
+            border-radius: 16px;
+            box-shadow: var(--card-shadow);
+            overflow: hidden;
+        }
+        
+        .response-header {
+            padding: 20px 25px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            background-color: var(--success);
+            color: white;
+            display: flex;
+            align-items: center;
+        }
+        
+        .response-header i {
+            margin-right: 10px;
+            font-size: 1.4rem;
+        }
+        
+        .response-header.error {
+            background-color: var(--danger);
+        }
+        
+        .response-body {
+            padding: 25px;
+        }
+        
+        .json-viewer {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            overflow: auto;
+            max-height: 400px;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+        
+        .document-type-pills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 25px;
+        }
+        
+        .pill-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--dark);
+            font-size: 0.95rem;
+        }
+        
+        .document-pill {
+            display: none;
+        }
+        
+        .document-pill + label {
+            padding: 10px 15px;
+            border-radius: 30px;
+            border: 2px solid #e9ecef;
+            cursor: pointer;
+            transition: var(--transition);
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+        }
+        
+        .document-pill + label i {
+            margin-right: 6px;
+        }
+        
+        .document-pill:checked + label {
+            background-color: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+        
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .header, .card, .response-card {
+            animation: fadeIn 0.6s ease-out forwards;
+        }
+        
+        .card {
+            animation-delay: 0.2s;
+        }
+        
+        .response-card {
+            animation-delay: 0.4s;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .document-type-pills {
+                flex-direction: column;
+                gap: 5px;
+            }
+            
+            .document-pill + label {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .btn {
+                padding: 12px 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Document Validation and Data Extraction System</h1>
+            <p>Upload and verify your documents securely with our intelligent verification platform</p>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-file-import"></i> Document Validation
+            </div>
+            <div class="card-body">
+                <div class="form-group">
+                    <label class="pill-label">Select Document Type:</label>
+                    <div class="document-type-pills">
+                        <input type="radio" name="document-type" id="aadhar" value="aadhar" class="document-pill" checked>
+                        <label for="aadhar"><i class="fas fa-id-card"></i> Aadhar Card</label>
+                        
+                        <input type="radio" name="document-type" id="pan" value="pan" class="document-pill">
+                        <label for="pan"><i class="fas fa-id-badge"></i> PAN Card</label>
+                        
+                        <input type="radio" name="document-type" id="marksheet10" value="marksheet10" class="document-pill">
+                        <label for="marksheet10"><i class="fas fa-file-alt"></i> 10th Marksheet</label>
+                        
+                        <input type="radio" name="document-type" id="marksheet12" value="marksheet12" class="document-pill">
+                        <label for="marksheet12"><i class="fas fa-file-alt"></i> 12th Marksheet</label>
+                        
+                        <input type="radio" name="document-type" id="college" value="college" class="document-pill">
+                        <label for="college"><i class="fas fa-university"></i> College Marksheet</label>
+                        
+                        <input type="radio" name="document-type" id="certificate" value="certificate" class="document-pill">
+                        <label for="certificate"><i class="fas fa-certificate"></i> Certificate</label>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Upload Document:</label>
+                    <div class="file-upload" id="file-drop-area">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <div class="file-upload-text">Drag & Drop your file here</div>
+                        <div class="file-upload-subtext">or click to browse (PDF, JPG, PNG)</div>
+                        <input type="file" id="document-file" accept=".pdf,.jpg,.jpeg,.png">
+                    </div>
+                    <div class="file-name" id="file-name-display">
+                        <i class="fas fa-file-alt"></i>
+                        <span id="file-name-text"></span>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="document-id">Document ID (optional):</label>
+                    <input type="text" class="form-control" id="document-id" placeholder="Enter Aadhar number, PAN number, etc.">
+                </div>
+                
+                <button class="btn btn-primary btn-block" id="submit-button">
+                    <i class="fas fa-check-circle"></i> Verify Document
+                </button>
+            </div>
+        </div>
+        
+        <div class="loading" id="loading-indicator">
+            <div class="spinner"></div>
+            <div class="loading-text">Analyzing your document. Please wait...</div>
+        </div>
+        
+        <div class="response-container" id="response-container">
+            <div class="response-card">
+                <div class="response-header" id="response-header">
+                    <i class="fas fa-check-circle"></i> Verification Results
+                </div>
+                <div class="response-body">
+                    <div class="json-viewer" id="response-text"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // DOM Elements
+            const submitButton = document.getElementById('submit-button');
+            const documentFile = document.getElementById('document-file');
+            const documentId = document.getElementById('document-id');
+            const responseContainer = document.getElementById('response-container');
+            const responseHeader = document.getElementById('response-header');
+            const responseText = document.getElementById('response-text');
+            const loadingIndicator = document.getElementById('loading-indicator');
+            const fileNameDisplay = document.getElementById('file-name-display');
+            const fileNameText = document.getElementById('file-name-text');
+            const fileDropArea = document.getElementById('file-drop-area');
+    
+            // File upload handling
+            documentFile.addEventListener('change', function () {
+                if (this.files[0]) {
+                    fileNameText.textContent = this.files[0].name;
+                    fileNameDisplay.style.display = 'flex';
+                    fileDropArea.style.borderColor = '#4361ee';
+                }
+            });
+    
+            // Drag and drop functionality
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                fileDropArea.addEventListener(eventName, preventDefaults, false);
+            });
+    
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+    
+            ['dragenter', 'dragover'].forEach(eventName => {
+                fileDropArea.addEventListener(eventName, highlight, false);
+            });
+    
+            ['dragleave', 'drop'].forEach(eventName => {
+                fileDropArea.addEventListener(eventName, unhighlight, false);
+            });
+    
+            function highlight() {
+                fileDropArea.style.borderColor = '#4361ee';
+                fileDropArea.style.backgroundColor = 'rgba(67, 97, 238, 0.05)';
+            }
+    
+            function unhighlight() {
+                fileDropArea.style.borderColor = '#e9ecef';
+                fileDropArea.style.backgroundColor = 'white';
+            }
+    
+            fileDropArea.addEventListener('drop', handleDrop, false);
+    
+            function handleDrop(e) {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+    
+                if (files.length) {
+                    documentFile.files = files;
+                    fileNameText.textContent = files[0].name;
+                    fileNameDisplay.style.display = 'flex';
+                }
+            }
+    
+            // Form submission
+            submitButton.addEventListener('click', function () {
+                // Validate inputs
+                if (!documentFile.files[0]) {
+                    showErrorMessage('Please select a file to upload');
+                    return;
+                }
+    
+                // Hide previous response and show loading
+                responseContainer.style.display = 'none';
+                loadingIndicator.style.display = 'block';
+    
+                // Get selected document type
+                const documentType = document.querySelector('input[name="document-type"]:checked').value;
+    
+                // Prepare form data
+                const formData = new FormData();
+                formData.append('file', documentFile.files[0]);
+                if (documentId.value) {
+                    formData.append('document_id', documentId.value);
+                }
+    
+                // Determine endpoint based on document type
+                let endpoint;
+                switch (documentType) {
+                    case 'aadhar':
+                        endpoint = 'http://localhost:5000/api/aadhar/extract';
+                        break;
+                    case 'pan':
+                        endpoint = 'http://localhost:5000/api/pan/extract';
+                        break;
+                    case 'marksheet10':
+                        endpoint = 'http://localhost:5000/api/marksheet10/extract';
+                        break;
+                    case 'marksheet12':
+                        endpoint = 'http://localhost:5000/api/marksheet12/extract';
+                        break;
+                    case 'college':
+                        endpoint = 'http://localhost:5000/api/college/extract';
+                        break;
+                    case 'certificate':
+                        endpoint = 'http://localhost:5000/api/certificate/extract';
+                        break;
+                    default:
+                        endpoint = 'http://localhost:5000/api/aadhar/extract';
+                }
+    
+                // Send request
+                fetch(endpoint, {
+                    method: 'POST',
+                    body: formData
+                })
+                    .then(response => {
+                        if (!response.ok) {
+                            return response.json().then(errorData => {
+                                throw new Error(errorData.message || errorData.error || 'Document validation failed');
+                            });
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        // Format and display JSON
+                        const formattedJson = formatJSON(data);
+                        responseText.innerHTML = formattedJson;
+    
+                        // Show success response
+                        responseHeader.innerHTML = '<i class="fas fa-check-circle"></i> Verification Successful';
+                        responseHeader.className = 'response-header';
+                        responseContainer.style.display = 'block';
+                    })
+                    .catch(error => {
+                        // Display meaningful error to user
+                        responseText.innerHTML = '';
+                        responseHeader.innerHTML = `<i class="fas fa-times-circle"></i> Verification Failed: ${error.message}`;
+                        responseHeader.className = 'response-header error';
+                        responseContainer.style.display = 'block';
+                    })
+                    .finally(() => {
+                        // Hide loading indicator
+                        loadingIndicator.style.display = 'none';
+                    });
+            });
+    
+            function showErrorMessage(message) {
+                responseText.textContent = message;
+                responseHeader.innerHTML = '<i class="fas fa-exclamation-circle"></i> Error';
+                responseHeader.className = 'response-header error';
+                responseContainer.style.display = 'block';
+                loadingIndicator.style.display = 'none';
+            }
+    
+            // Format JSON with syntax highlighting
+            function formatJSON(json) {
+                if (typeof json !== 'string') {
+                    json = JSON.stringify(json, null, 2);
+                }
+    
+                json = json.replace(/&/g, '&amp;')
+                           .replace(/</g, '&lt;')
+                           .replace(/>/g, '&gt;');
+    
+                return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
+                    if (/^"/.test(match)) {
+                        if (/:$/.test(match)) {
+                            return '<span style="color: #7209b7; font-weight: bold;">' + match + '</span>';
+                        } else {
+                            return '<span style="color: var(--extracted-data);">' + match + '</span>';
+                        }
+                    } else if (/true|false/.test(match)) {
+                        return '<span style="color: #ef476f;">' + match + '</span>';
+                    } else if (/null/.test(match)) {
+                        return '<span style="color: #ef476f;">' + match + '</span>';
+                    } else {
+                        return '<span style="color: #4361ee;">' + match + '</span>';
+                    }
+                });
+            }
+    
+            // Clear file selection
+            window.clearFile = function () {
+                documentFile.value = '';
+                fileNameText.textContent = 'No file selected';
+                fileNameDisplay.style.display = 'none';
+                fileDropArea.style.borderColor = '#e9ecef';
+            };
+        });
+    </script>
+    
+    </body>
+    </html>
